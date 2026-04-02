@@ -2,8 +2,9 @@
 
 Lab opens with a quiz and then kicks off the hackathon.
 
-To get the full point for the lab, you need to pass Tasks 1, 2, 3 during the lab. 
-Task 4 and 5 must be finished by the usual deadline of Thursday 23:59.
+To get the full point for the lab, you need to:
+- Pass Tasks 1, 2, 3 during the lab AND 
+- Finish Task 4 and 5 by the usual deadline of Thursday 23:59.
 
 Each student builds their own project:
 - Go from idea to a deployed product.
@@ -69,7 +70,7 @@ Implement Version 1 outlined in the plan:
 Implement and deploy Version 2 outlined in the plan:
 - Build and polish functionality;
 - Take TA feedback into account;
-- Push all code to the github repo;
+- Push all code to the github repo (see the detailed instructions below);
 - Follow best practices and git workflow;
 - Document your solution;
 - Dockerize all services;
@@ -78,7 +79,7 @@ Implement and deploy Version 2 outlined in the plan:
 Version 2 can be done during the lab or after the lab before the usual deadline.
 
 
-## Task 5.
+## Task 5 (demo and pdf submitted through moodle)
 Submit presentation with five slides:
 
 1. Title:
@@ -88,18 +89,18 @@ Submit presentation with five slides:
   - Your group
 
 2. Context:
-  - Your end users
-  - The problem of end users you are solving
-  - Your solution
+  - End-user of the product
+  - Which problem your product solves
+  - The product idea in one short sentence
 
 3. Implementation:
   - How you built the product
-  - What was in Version 1 and Version 2
+  - What went into Version 1 and Version 2
   - What TA feedback points you addressed
 
 4. Demo:
-  - Pre-recorded demo with live commentaries (no longer than 2 minutes)
-  - _Note:_ This is the most important part of the presentation.
+  - Pre-recorded video demonstration of Product version 2 with pre-recorded voice commentary (no longer than 2 minutes).
+  - _Note:_ **This is the most important part of the presentation**.
 
 5. Links:
   - Link and QR code for each of these:
