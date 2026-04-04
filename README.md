@@ -38,8 +38,9 @@ The project idea must be:
 Define and show to your TA:
 
 - End-user of the product
-- What problem your product solves for the end-user? / What is its core feature?
-- The product idea in one short sentence
+- What problem your product solves for the end-user?
+- The product idea in one short sentence.
+- What is the product's core feature?
 
 ### Implementation plan
 
