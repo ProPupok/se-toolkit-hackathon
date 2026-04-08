@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 DiceRoll Sync — Экран Мастера</title>
+    <!-- Подключаем Bootstrap для быстрого красивого оформления -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        .roll-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid #0d6efd;
+            transition: all 0.3s ease;
+        }
+        .roll-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        /* Подсветка критических результатов */
+        .roll-card.crit-20 {
+            border-left-color: #ffc107;
+            background: rgba(255, 193, 7, 0.15);
+        }
+        .roll-card.crit-1 {
+            border-left-color: #dc3545;
+            background: rgba(220, 53, 69, 0.15);
+        }
+        .result-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(13, 110, 253, 0.5);
+        }
+        .roll-card strong {
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+        .roll-card .text-muted {
+            color: #adb5bd !important;
+        }
+        #status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .connected { background-color: #198754; }
+        .disconnected { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Заголовок и статус подключения -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>🎲 DiceRoll Sync</h1>
+            <div>
+                <span id="status-dot" class="disconnected"></span>
+                <span id="status-text" class="ms-1">Отключено</span>
+            </div>
+        </div>
+
+        <!-- Счётчик бросков -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="card bg-dark text-light">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Всего бросков</h5>
+                        <p id="total-rolls" class="fs-2 mb-0">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark text-light">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Среднее</h5>
+                        <p id="avg-roll" class="fs-2 mb-0">—</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark text-light">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Чаще всего</h5>
+                        <p id="most-common" class="fs-2 mb-0">—</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark text-light">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Реже всего</h5>
+                        <p id="rarest" class="fs-2 mb-0">—</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Лента бросков -->
+        <h5 class="mb-3">📜 Лента бросков</h5>
+        <div id="rolls-feed" class="d-flex flex-column gap-2" style="max-height: 60vh; overflow-y: auto;">
+            <p id="empty-msg" class="text-muted text-center py-5">
+                Пока нет бросков. Игроки могут использовать /roll в Telegram.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // ─── WebSocket подключение ─────────────────────────────
+        let ws = null;
+        let totalRolls = 0;
+        let allResults = [];
+
+        function connect() {
+            // Определяем адрес WebSocket (тот же хост, что и страница)
+            const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+            const wsUrl = `${protocol}//${location.host}/ws`;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                document.getElementById("status-dot").className = "connected";
+                document.getElementById("status-text").textContent = "Подключено";
+            };
+
+            ws.onclose = () => {
+                document.getElementById("status-dot").className = "disconnected";
+                document.getElementById("status-text").textContent = "Отключено";
+                // Переподключение через 3 секунды
+                setTimeout(connect, 3000);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                addRoll(data);
+            };
+        }
+
+        // ─── Добавление броска на страницу ────────────────────
+        function addRoll(data) {
+            // Убираем сообщение "нет бросков"
+            const emptyMsg = document.getElementById("empty-msg");
+            if (emptyMsg) emptyMsg.remove();
+
+            const { player_name, result, dice_notation, rolls, modifier, timestamp } = data;
+            const time = new Date(timestamp).toLocaleTimeString("ru-RU");
+
+            // Определяем CSS-класс для критических результатов
+            let cardClass = "roll-card card mb-2";
+            if (rolls && rolls.length === 1 && rolls[0] === parseInt(dice_notation)) cardClass += " crit-20";
+            if (rolls && rolls.length === 1 && rolls[0] === 1) cardClass += " crit-1";
+
+            // Эмодзи для критов
+            let emoji = "🎲";
+            if (rolls && rolls.length === 1 && rolls[0] === parseInt(dice_notation)) emoji = "🎉";
+            if (rolls && rolls.length === 1 && rolls[0] === 1) emoji = "💀";
+
+            // Детализация кубиков
+            let rollsDetail = "";
+            if (rolls && rolls.length > 1) {
+                const badges = rolls.map(r =>
+                    `<span class="badge bg-secondary me-1">${r}</span>`
+                ).join("");
+                rollsDetail = `<div class="mt-1">${badges}</div>`;
+            }
+
+            // Модификатор
+            let modText = "";
+            if (modifier > 0) modText = ` + ${modifier}`;
+            else if (modifier < 0) modText = ` − ${Math.abs(modifier)}`;
+
+            const html = `
+                <div class="${cardClass}">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${emoji} ${player_name}</strong>
+                            <div class="text-muted small">${dice_notation} • ${time}</div>
+                            ${rollsDetail}
+                        </div>
+                        <div class="result-number">${result}</div>
+                    </div>
+                </div>
+            `;
+
+            // Добавляем в начало ленты
+            const feed = document.getElementById("rolls-feed");
+            feed.insertAdjacentHTML("afterbegin", html);
+
+            // Обновляем статистику
+            totalRolls++;
+            allResults.push(result);
+            document.getElementById("total-rolls").textContent = totalRolls;
+            document.getElementById("avg-roll").textContent = (allResults.reduce((a, b) => a + b, 0) / allResults.length).toFixed(1);
+
+            // Считаем чаще/реже всего
+            const freq = {};
+            allResults.forEach(r => freq[r] = (freq[r] || 0) + 1);
+            const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+            document.getElementById("most-common").textContent = `${sorted[0][0]} (${sorted[0][1]}x)`;
+            document.getElementById("rarest").textContent = `${sorted[sorted.length - 1][0]} (${sorted[sorted.length - 1][1]}x)`;
+        }
+
+        // ─── Запуск ───────────────────────────────────────────
+        connect();
+    </script>
+</body>
+</html>
