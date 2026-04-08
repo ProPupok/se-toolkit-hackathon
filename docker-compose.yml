@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  diceroll-sync:
+    build: .
+    container_name: diceroll-sync
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Сохраняем БД между перезапусками контейнера
+      - dice-data:/data
+
+volumes:
+  dice-data:
